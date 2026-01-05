@@ -131,18 +131,22 @@ export async function getGoogleUserInfo(accessToken) {
     email: data.email
   };
 }
-info (sub and email)
-  const userInfo = await getGoogleUserInfo(tokens.access_token);
-  
-  return {
-    access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token,
-    expires_in: tokens.expires_in,
-    token_type: tokens.token_type,
-    scope: tokens.scope,
-    sub: userInfo.sub,      // Stable Google user ID
-    email: userInfo
-  
+
+/**
+ * Exchange authorization code for tokens
+ * @param {string} code - Authorization code from OAuth callback
+ * @param {Object} env - Cloudflare Worker environment
+ * @returns {Promise<Object>} Token response with access_token, refresh_token, and user info (sub and email)
+ */
+export async function exchangeCodeForTokens(code, env) {
+  const params = new URLSearchParams({
+    code: code,
+    client_id: env.GOOGLE_CLIENT_ID,
+    client_secret: env.GOOGLE_CLIENT_SECRET,
+    redirect_uri: `${env.WORKER_URL}/oauth/callback`,
+    grant_type: 'authorization_code'
+  });
+
   const response = await fetch(GOOGLE_TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -156,12 +160,8 @@ info (sub and email)
   
   const tokens = await response.json();
   
-  // Get user email
-  const userInfo = await fetch(GOOGLE_USERINFO_URL, {
-    headers: { 'Authorization': `Bearer ${tokens.access_token}` }
-  });
-  
-  const user = await userInfo.json();
+  // Get user info (sub and email)
+  const userInfo = await getGoogleUserInfo(tokens.access_token);
   
   return {
     access_token: tokens.access_token,
@@ -169,7 +169,8 @@ info (sub and email)
     expires_in: tokens.expires_in,
     token_type: tokens.token_type,
     scope: tokens.scope,
-    email: user.email,
+    sub: userInfo.sub,      // Stable Google user ID
+    email: userInfo.email,
     expires_at: Date.now() + (tokens.expires_in * 1000)
   };
 }
@@ -270,7 +271,15 @@ export async function generateOAuthUrl(chatId, initiatedBy, chatType, env) {
     scope: SCOPES,
     access_type: 'offline',
     prompt: 'consent',
-   Now stores connection using multi-account model
+    state: state
+  });
+
+  return `${GOOGLE_AUTH_URL}?${params.toString()}`;
+}
+
+/**
+ * Handle OAuth callback - exchanges code for tokens and stores connection
+ * Now stores connection using multi-account model
  */
 export async function handleOAuthCallback(code, state, env) {
   const secret = env.OAUTH_STATE_SECRET || env.ENCRYPTION_KEY || 'change-in-production';
@@ -317,27 +326,6 @@ export async function handleOAuthCallback(code, state, env) {
     chatId: stateData.chatId,
     email: tokens.email,
     sub: tokens.sub
-  
-  // Delete state (one-time use)
-  await env.EVENTS.delete(stateKey);
-  
-  // Exchange code for tokens
-  const tokens = await exchangeCodeForTokens(env, code);
-  
-  // Store tokens at CHAT-SCOPED key
-  const tokenKey = `gc_tokens:chat:${stateData.chatId}`;
-  await env.EVENTS.put(tokenKey, JSON.stringify({
-    access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token,
-    expires_at: tokens.expires_at,
-    email: tokens.email,
-    linkedBy: stateData.initiatedBy,
-    linkedAt: new Date().toISOString(),
-    scope: tokens.scope
-  }));
-  
-  return {
-    chatId: stateData.chatId,
-    email: tokens.email
   };
 }
+

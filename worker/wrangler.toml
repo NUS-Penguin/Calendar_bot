@@ -5,7 +5,7 @@ compatibility_date = "2024-01-01"
 # KV namespace for storing selected events per chat
 # Create a KV namespace: wrangler kv:namespace create "EVENTS"
 kv_namespaces = [
-  { binding = "EVENTS", id = "YOUR_KV_NAMESPACE_ID" }
+  { binding = "EVENTS", id = "19fa09d39f8f4106b647e4f5d764d6d9" }
 ]
 
 # Environment variables (non-sensitive)
@@ -19,7 +19,7 @@ ENABLE_GAS_FALLBACK = "true"     # Keep GAS as fallback during migration
 
 # Worker URL (for OAuth redirects)
 # Replace with your actual worker URL after deployment
-WORKER_URL = "https://your-worker-name.your-subdomain.workers.dev"
+WORKER_URL = "https://c4lendar-worker.calendar-bot.workers.dev"
 
 # Secrets (set with: wrangler secret put <KEY>)
 # - TELEGRAM_BOT_TOKEN
