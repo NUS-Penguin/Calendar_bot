@@ -1,0 +1,33 @@
+name = "c4lendar-worker"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# KV namespace for storing selected events per chat
+# Create a KV namespace: wrangler kv:namespace create "EVENTS"
+kv_namespaces = [
+  { binding = "EVENTS", id = "YOUR_KV_NAMESPACE_ID" }
+]
+
+# Environment variables (non-sensitive)
+[vars]
+TIMEZONE = "Asia/Singapore"
+DEFAULT_DURATION_MINUTES = 60
+
+# OAuth feature flags
+USE_OAUTH = "true"               # Set to "true" to enable OAuth
+ENABLE_GAS_FALLBACK = "true"     # Keep GAS as fallback during migration
+
+# Worker URL (for OAuth redirects)
+# Replace with your actual worker URL after deployment
+WORKER_URL = "https://your-worker-name.your-subdomain.workers.dev"
+
+# Secrets (set with: wrangler secret put <KEY>)
+# - TELEGRAM_BOT_TOKEN
+# - GROQ_API_KEY
+# - GAS_WEBAPP_URL (legacy, optional)
+# - ADMIN_USER_ID              # Your numeric Telegram user ID from @userinfobot
+# - GOOGLE_CLIENT_ID           # Google OAuth client ID
+# - GOOGLE_CLIENT_SECRET       # Google OAuth client secret
+# - ENCRYPTION_KEY             # 32-character secret for encrypting refresh tokens (generate with: openssl rand -base64 32)
+# - OAUTH_STATE_SECRET         # Secret for HMAC signing OAuth state (can be same as ENCRYPTION_KEY)
+
